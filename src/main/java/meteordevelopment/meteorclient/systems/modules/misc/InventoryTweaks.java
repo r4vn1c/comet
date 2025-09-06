@@ -57,12 +57,6 @@ public class InventoryTweaks extends Module {
         .build()
     );
 
-    private final Setting<List<Item>> antiDropItems = sgGeneral.add(new ItemListSetting.Builder()
-        .name("anti-drop-items")
-        .description("Items to prevent dropping. Doesn't work in creative inventory screen.")
-        .build()
-    );
-
     // Sorting
 
     private final Setting<Boolean> sortingEnabled = sgSorting.add(new BoolSetting.Builder()
@@ -99,6 +93,12 @@ public class InventoryTweaks extends Module {
 
     // Anti drop
 
+    public final Setting<List<Item>> antiDropItems = sgAntiDrop.add(new ItemListSetting.Builder()
+        .name("anti-drop-items")
+        .description("Items to prevent dropping. Doesn't work in creative inventory screen.")
+        .build()
+    );
+
     private final Setting<Boolean> antiItemFrame = sgAntiDrop.add(new BoolSetting.Builder()
         .name("item-frames")
         .description("Prevent anti-drop items from being placed in item frames or pots")
@@ -114,7 +114,7 @@ public class InventoryTweaks extends Module {
 
     // Auto Drop
 
-    private final Setting<List<Item>> autoDropItems = sgAutoDrop.add(new ItemListSetting.Builder()
+    public final Setting<List<Item>> autoDropItems = sgAutoDrop.add(new ItemListSetting.Builder()
         .name("auto-drop-items")
         .description("Items to drop.")
         .build()

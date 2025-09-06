@@ -50,6 +50,7 @@ public class Commands {
         add(new RotationCommand());
         add(new WaypointCommand());
         add(new InputCommand());
+        add(new ItemCommand());
         COMMANDS.sort(Comparator.comparing(Command::getName));
     }
 
