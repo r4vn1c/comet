@@ -9,7 +9,7 @@ package meteordevelopment.meteorclient.systems.modules.render;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
-import meteordevelopment.meteorclient.events.meteor.MouseButtonEvent;
+import meteordevelopment.meteorclient.events.meteor.MouseClickEvent;
 import meteordevelopment.meteorclient.events.meteor.MouseScrollEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.ChunkOcclusionEvent;
@@ -207,7 +207,7 @@ public class Freecam extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (mc.cameraEntity.isInsideWall()) mc.getCameraEntity().noClip = true;
+        if (mc.getCameraEntity().isInsideWall()) mc.getCameraEntity().noClip = true;
         if (!perspective.isFirstPerson()) mc.options.setPerspective(Perspective.FIRST_PERSON);
 
         Vec3d forward = Vec3d.fromPolar(0, yaw);
@@ -281,72 +281,44 @@ public class Freecam extends Module {
     public void onKey(KeyEvent event) {
         if (Input.isKeyPressed(GLFW.GLFW_KEY_F3)) return;
 
-        boolean cancel = true;
-
-        if (mc.options.forwardKey.matchesKey(event.key, 0)) {
-            forward = event.action != KeyAction.Release;
-            mc.options.forwardKey.setPressed(false);
-        }
-        else if (mc.options.backKey.matchesKey(event.key, 0)) {
-            backward = event.action != KeyAction.Release;
-            mc.options.backKey.setPressed(false);
-        }
-        else if (mc.options.rightKey.matchesKey(event.key, 0)) {
-            right = event.action != KeyAction.Release;
-            mc.options.rightKey.setPressed(false);
-        }
-        else if (mc.options.leftKey.matchesKey(event.key, 0)) {
-            left = event.action != KeyAction.Release;
-            mc.options.leftKey.setPressed(false);
-        }
-        else if (mc.options.jumpKey.matchesKey(event.key, 0)) {
-            up = event.action != KeyAction.Release;
-            mc.options.jumpKey.setPressed(false);
-        }
-        else if (mc.options.sneakKey.matchesKey(event.key, 0)) {
-            down = event.action != KeyAction.Release;
-            mc.options.sneakKey.setPressed(false);
-        }
-        else {
-            cancel = false;
-        }
-
-        if (cancel) event.cancel();
+        if (onInput(event.key(), event.action)) event.cancel();
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    private void onMouseButton(MouseButtonEvent event) {
-        boolean cancel = true;
+    private void onMouseClick(MouseClickEvent event) {
+        if (onInput(event.button(), event.action)) event.cancel();
+    }
 
-        if (mc.options.forwardKey.matchesMouse(event.button)) {
-            forward = event.action != KeyAction.Release;
+    private boolean onInput(int key, KeyAction action) {
+        if (Input.getKey(mc.options.forwardKey) == key) {
+            forward = action != KeyAction.Release;
             mc.options.forwardKey.setPressed(false);
         }
-        else if (mc.options.backKey.matchesMouse(event.button)) {
-            backward = event.action != KeyAction.Release;
+        else if (Input.getKey(mc.options.backKey) == key) {
+            backward = action != KeyAction.Release;
             mc.options.backKey.setPressed(false);
         }
-        else if (mc.options.rightKey.matchesMouse(event.button)) {
-            right = event.action != KeyAction.Release;
+        else if (Input.getKey(mc.options.rightKey) == key) {
+            right = action != KeyAction.Release;
             mc.options.rightKey.setPressed(false);
         }
-        else if (mc.options.leftKey.matchesMouse(event.button)) {
-            left = event.action != KeyAction.Release;
+        else if (Input.getKey(mc.options.leftKey) == key) {
+            left = action != KeyAction.Release;
             mc.options.leftKey.setPressed(false);
         }
-        else if (mc.options.jumpKey.matchesMouse(event.button)) {
-            up = event.action != KeyAction.Release;
+        else if (Input.getKey(mc.options.jumpKey) == key) {
+            up = action != KeyAction.Release;
             mc.options.jumpKey.setPressed(false);
         }
-        else if (mc.options.sneakKey.matchesMouse(event.button)) {
-            down = event.action != KeyAction.Release;
+        else if (Input.getKey(mc.options.sneakKey) == key) {
+            down = action != KeyAction.Release;
             mc.options.sneakKey.setPressed(false);
         }
         else {
-            cancel = false;
+            return false;
         }
 
-        if (cancel) event.cancel();
+        return true;
     }
 
     @EventHandler(priority = EventPriority.LOW)

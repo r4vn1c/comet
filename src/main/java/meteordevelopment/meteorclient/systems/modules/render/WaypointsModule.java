@@ -5,7 +5,7 @@
 
 package meteordevelopment.meteorclient.systems.modules.render;
 
-import meteordevelopment.meteorclient.events.entity.player.PlayerDeathEvent;
+import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.renderer.GuiRenderer;
@@ -28,6 +28,7 @@ import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.DeathScreen;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -35,8 +36,9 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Vector3d;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.List;
 
 import static meteordevelopment.meteorclient.utils.player.ChatUtils.formatCoords;
 
@@ -94,9 +96,8 @@ public class WaypointsModule extends Module {
         Vector3d center = new Vector3d(mc.getWindow().getFramebufferWidth() / 2.0, mc.getWindow().getFramebufferHeight() / 2.0, 0);
         int textRenderDist = textRenderDistance.get();
 
-        for (Iterator<Waypoint> it = Waypoints.get().iterator(); it.hasNext();) {
-            Waypoint waypoint = it.next();
-
+        List<Waypoint> toRemove = new ArrayList<>();
+        for (Waypoint waypoint : Waypoints.get()) {
             // Continue if this waypoint should not be rendered
             if (!waypoint.visible.get() || !Waypoints.checkDimension(waypoint)) continue;
 
@@ -111,13 +112,11 @@ public class WaypointsModule extends Module {
             boolean waypointIsNear = waypoint.actionWhenNearCheck((int) Math.floor(dist));
             if (playerAlive && waypointIsNear) {
                 switch (waypoint.actionWhenNear.get()) {
-                    case Disabled: break;
-                    case Hide:
-                        waypoint.visible.set(false);
-                        break;
-                    case Delete:
-                        it.remove();
-                        break;
+                    case Hide -> waypoint.visible.set(false);
+                    case Delete -> {
+                        toRemove.add(waypoint);
+                        continue;
+                    }
                 }
             }
 
@@ -161,13 +160,15 @@ public class WaypointsModule extends Module {
 
             NametagUtils.end();
         }
+
+        Waypoints.get().removeAll(toRemove);
     }
 
     @EventHandler
-    private void onPlayerDeath(PlayerDeathEvent event) {
-        if (mc.player == null) return;
+    private void onOpenScreen(OpenScreenEvent event) {
+        if (!(event.screen instanceof DeathScreen)) return;
 
-        addDeath(mc.player.getPos());
+        if (!event.isCancelled()) addDeath(mc.player.getEntityPos());
     }
 
     public void addDeath(Vec3d deathPos) {
@@ -201,16 +202,16 @@ public class WaypointsModule extends Module {
     private void cleanDeathWPs(int max) {
         int oldWpC = 0;
 
-        for (Iterator<Waypoint> it = Waypoints.get().iterator(); it.hasNext();) {
-            Waypoint wp = it.next();
-
+        List<Waypoint> toRemove = new ArrayList<>();
+        for (Waypoint wp : Waypoints.get()) {
             if (wp.name.get().startsWith("Death ") && wp.icon.get().equals("skull")) {
                 oldWpC++;
 
-                if (oldWpC > max)
-                    it.remove();
+                if (oldWpC > max) toRemove.add(wp);
             }
         }
+
+        Waypoints.get().removeAll(toRemove);
     }
 
     @Override

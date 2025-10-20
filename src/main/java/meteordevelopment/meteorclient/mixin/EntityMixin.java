@@ -14,7 +14,11 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.render.FreeLook;
 import meteordevelopment.meteorclient.systems.modules.render.Freecam;
 import meteordevelopment.meteorclient.systems.modules.render.NoRender;
+import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
@@ -60,6 +64,14 @@ public abstract class EntityMixin {
         else if ((Object) this instanceof LivingEntity) {
             MeteorClient.EVENT_BUS.post(LivingEntityMoveEvent.get((LivingEntity) (Object) this, movement));
         }
+    }
+
+    @ModifyReturnValue(method = "isInvisibleTo(Lnet/minecraft/entity/player/PlayerEntity;)Z", at = @At("RETURN"))
+    private boolean isInvisibleToCanceller(boolean original) {
+        if (!Utils.canUpdate()) return original;
+        if (!Utils.cheatsAllowed()) return original;
+        if (Modules.get().get(NoRender.class).noInvisibility()) return false;
+        return original;
     }
 
     @Inject(method = "isGlowing", at = @At("HEAD"), cancellable = true)

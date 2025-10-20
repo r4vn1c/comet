@@ -115,7 +115,7 @@ public class Zoom extends Module {
 
     @EventHandler
     public void onKeyPressed(KeyEvent event) {
-        if (event.key != GLFW.GLFW_KEY_F1) return;
+        if (event.key() != GLFW.GLFW_KEY_F1) return;
         hudManualToggled = true;
     }
 
