@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes to Meteor are not documented here, only Asteroid specific changes.
 
+## [0.3.3] - 2025-10-21
+Rebased to Meteor Client 1.21.10, Build #7
+
+### Added
+#### New `.item` command
+- Manages item lists in various modules.
+- Meant to make these features quicker / easier to use.
+```
+.item highlight              | Adds currently held item to Item Highlight whitelist
+.item highlight <item>       | Adds <item> to Item Highlight whitelist
+.item highlight clear        | Clears currently held item from Item Highlight whitelist
+.item highlight clear <item> | Clears <item> from Item Highlight whitelist
+.item highlight clear *      | Clears all items from Item Highlight whitelist
+
+.item block                  | Adds currently held item to auto drop list in Inventory Tweaks
+.item block <item>           | Adds <item> to auto drop list in Inventory Tweaks
+.item block clear            | Clears currently held item from auto drop list in Inventory Tweaks
+.item block clear <item>     | Clears <item> from auto drop list in Inventory Tweaks
+.item block clear *          | Clears all items from auto drop list in Inventory Tweaks
+
+.item lock                   | Adds currently held item to anti drop list in Inventory Tweaks
+.item lock <item>            | Adds <item> to anti drop list in Inventory Tweaks
+.item lock clear             | Clears currently held item from anti drop list in Inventory Tweaks
+.item lock clear <item>      | Clears <item> from anti drop list in Inventory Tweaks
+.item lock clear *           | Clears all items from anti drop list in Inventory Tweaks
+```
+
+### Changed
+- Minecraft is now at 1.21.10
+- Waypoints can now be configured to delete themselves, alongside hiding themselves when the player is near enough.
+  - Death waypoints are now set to auto delete, instead of auto hide.
+- Hud is now shown behind the click gui once again.
+- Middle Click Extras is now disabled in Creative mode by default.
+  - This can is toggled with a setting in the module.
+
 ## [0.3.2] - 2025-08-31
 Rebased to Meteor Client 1.21.8, Build #31.
 
@@ -53,7 +88,7 @@ Minor version bumped as a few new modules have been brought over from Meteor.
 - `Nametags`: Renders customisable nametags on select entities.
 
 ### Changed
-- Minecraft version is not at 1.21.8.
+- Minecraft version is now at 1.21.8.
 - Modules that are cheats are now labelled as such in their description.
 
 ## [0.2.7] - 2025-06-22
