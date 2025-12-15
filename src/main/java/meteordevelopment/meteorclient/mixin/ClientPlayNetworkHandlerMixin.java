@@ -5,6 +5,10 @@
 
 package meteordevelopment.meteorclient.mixin;
 
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.commands.Commands;
@@ -33,7 +37,6 @@ import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -42,15 +45,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ClientPlayNetworkHandlerMixin extends ClientCommonNetworkHandler {
     @Shadow
     private ClientWorld world;
-
-    @Shadow
-    public abstract void sendChatMessage(String content);
-
-    @Unique
-    private boolean ignoreChatMessage;
-
-    @Unique
-    private boolean worldNotNull;
 
     protected ClientPlayNetworkHandlerMixin(MinecraftClient client, ClientConnection connection, ClientConnectionState connectionState) {
         super(client, connection, connectionState);
@@ -66,13 +60,13 @@ public abstract class ClientPlayNetworkHandlerMixin extends ClientCommonNetworkH
     }
 
     @Inject(method = "onGameJoin", at = @At("HEAD"))
-    private void onGameJoinHead(GameJoinS2CPacket packet, CallbackInfo info) {
-        worldNotNull = world != null;
+    private void onGameJoinHead(GameJoinS2CPacket packet, CallbackInfo info, @Share("worldNotNull") LocalBooleanRef worldNotNull) {
+        worldNotNull.set(world != null);
     }
 
     @Inject(method = "onGameJoin", at = @At("TAIL"))
-    private void onGameJoinTail(GameJoinS2CPacket packet, CallbackInfo info) {
-        if (worldNotNull) {
+    private void onGameJoinTail(GameJoinS2CPacket packet, CallbackInfo info, @Share("worldNotNull") LocalBooleanRef worldNotNull) {
+        if (worldNotNull.get()) {
             MeteorClient.EVENT_BUS.post(GameLeftEvent.get());
         }
 
@@ -124,18 +118,16 @@ public abstract class ClientPlayNetworkHandlerMixin extends ClientCommonNetworkH
     }
 
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
-    private void onSendChatMessage(String message, CallbackInfo ci) {
-        if (ignoreChatMessage) return;
-
+    private void onSendChatMessage(String message, CallbackInfo ci, @Local(argsOnly = true) LocalRef<String> messageRef) {
         if (!message.startsWith(Config.get().prefix.get())) {
             SendMessageEvent event = MeteorClient.EVENT_BUS.post(SendMessageEvent.get(message));
 
             if (!event.isCancelled()) {
-                ignoreChatMessage = true;
-                sendChatMessage(event.message);
-                ignoreChatMessage = false;
+                messageRef.set(event.message);
+            } else {
+                ci.cancel();
             }
-            ci.cancel();
+
             return;
         }
 

@@ -21,6 +21,7 @@ import net.minecraft.client.render.state.WeatherRenderState;
 import net.minecraft.client.render.state.WorldBorderRenderState;
 import net.minecraft.client.util.Handle;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,17 +35,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin implements IWorldRenderer {
+
+    @Unique private NoRender noRender;
+
+    // if a world exists, meteor is initialised
+    @Inject(method = "setWorld", at = @At("TAIL"))
+    private void onSetWorld(ClientWorld world, CallbackInfo ci) {
+        noRender = Modules.get().get(NoRender.class);
+    }
+
     @Inject(method = "checkEmpty", at = @At("HEAD"), cancellable = true)
     private void onCheckEmpty(MatrixStack matrixStack, CallbackInfo info) {
         info.cancel();
     }
 
     @Inject(method = "drawBlockOutline", at = @At("HEAD"), cancellable = true)
-    private void onDrawHighlightedBlockOutline(MatrixStack matrices, VertexConsumer vertexConsumer, double x, double y, double z, OutlineRenderState state, int i, CallbackInfo ci) {
+    private void onDrawHighlightedBlockOutline(MatrixStack matrices, VertexConsumer vertexConsumer, double x, double y, double z, OutlineRenderState state, int i, float f, CallbackInfo ci) {
         if (Modules.get().isActive(BlockSelection.class)) ci.cancel();
     }
 
-    @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;method_74752(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;Z)V"), index = 2)
+    @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;updateCamera(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;Z)V"), index = 2)
     private boolean renderSetupTerrainModifyArg(boolean spectator) {
         return Modules.get().isActive(Freecam.class) || spectator;
     }
@@ -53,17 +63,17 @@ public abstract class WorldRendererMixin implements IWorldRenderer {
 
     @WrapWithCondition(method = "method_62216", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WeatherRendering;renderPrecipitation(Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/util/math/Vec3d;Lnet/minecraft/client/render/state/WeatherRenderState;)V"))
     private boolean shouldRenderPrecipitation(WeatherRendering instance, VertexConsumerProvider vertexConsumers, Vec3d pos, WeatherRenderState weatherRenderState) {
-        return !Modules.get().get(NoRender.class).noWeather();
+        return !noRender.noWeather();
     }
 
     @WrapWithCondition(method = "method_62216", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldBorderRendering;render(Lnet/minecraft/client/render/state/WorldBorderRenderState;Lnet/minecraft/util/math/Vec3d;DD)V"))
     private boolean shouldRenderWorldBorder(WorldBorderRendering instance, WorldBorderRenderState state, Vec3d cameraPos, double viewDistanceBlocks, double farPlaneDistance) {
-        return !Modules.get().get(NoRender.class).noWorldBorder();
+        return !noRender.noWorldBorder();
     }
 
 	@Inject(method = "hasBlindnessOrDarkness(Lnet/minecraft/client/render/Camera;)Z", at = @At("HEAD"), cancellable = true)
 	private void hasBlindnessOrDarkness(Camera camera, CallbackInfoReturnable<Boolean> info) {
-		if (Modules.get().get(NoRender.class).noBlindness() || Modules.get().get(NoRender.class).noDarkness()) info.setReturnValue(null);
+		if (noRender.noBlindness() || noRender.noDarkness()) info.setReturnValue(null);
 	}
 
     // IWorldRenderer

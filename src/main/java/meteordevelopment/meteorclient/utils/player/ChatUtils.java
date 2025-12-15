@@ -10,7 +10,10 @@ import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixininterface.IChatHud;
 import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.utils.PostInit;
-import net.minecraft.text.*;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.Vec3d;
@@ -158,7 +161,8 @@ public class ChatUtils {
 
         if (!Config.get().deleteChatFeedback.get()) id = 0;
 
-        ((IChatHud) mc.inGameHud.getChatHud()).meteor$add(message, id);
+        final int finalId = id; // Intellij copes about using non-final args in lambdas
+        mc.execute(() -> ((IChatHud) mc.inGameHud.getChatHud()).meteor$add(message, finalId));
     }
 
     private static MutableText getCustomPrefix(String prefixTitle, Formatting prefixColor) {

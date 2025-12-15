@@ -35,6 +35,8 @@ import meteordevelopment.orbit.EventPriority;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.util.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -101,10 +103,17 @@ public class Modules extends System<Modules> {
     }
 
     @SuppressWarnings("unchecked")
+    @Nullable
     public <T extends Module> T get(Class<T> klass) {
         return (T) moduleInstances.get(klass);
     }
 
+    @SuppressWarnings("unused")
+    public <T extends Module> Optional<T> getOptional(Class<T> klass) {
+        return Optional.ofNullable(get(klass));
+    }
+
+    @Nullable
     public Module get(String name) {
         for (Module module : moduleInstances.values()) {
             if (module.name.equalsIgnoreCase(name)) return module;
@@ -147,27 +156,34 @@ public class Modules extends System<Modules> {
     }
 
     public List<Module> getActive() {
-        synchronized (active) {
-            return active;
-        }
+        return active;
     }
 
-    public Set<Module> searchTitles(String text) {
-        Map<Module, Integer> modules = new ValueComparableMap<>(Comparator.naturalOrder());
+    public List<Pair<Module, String>> searchTitles(String text) {
+        Map<Pair<Module, String>, Integer> modules = new HashMap<>();
 
         for (Module module : this.moduleInstances.values()) {
             if (!module.isEnabled()) { continue; }
-            int score = Utils.searchLevenshteinDefault(module.title, text, false);
+            String title = module.title;
+            int score = Utils.searchLevenshteinDefault(title, text, false);
+
             if (Config.get().moduleAliases.get()) {
                 for (String alias : module.aliases) {
                     int aliasScore = Utils.searchLevenshteinDefault(alias, text, false);
-                    if (aliasScore < score) score = aliasScore;
+                    if (aliasScore < score) {
+                        title = module.title + " (" + alias + ")";
+                        score = aliasScore;
+                    }
                 }
             }
-            modules.put(module, modules.getOrDefault(module, 0) + score);
+
+            modules.put(new Pair<>(module, title), score);
         }
 
-        return modules.keySet();
+        List<Pair<Module, String>> l = new ArrayList<>(modules.keySet());
+        l.sort(Comparator.comparingInt(modules::get));
+
+        return l;
     }
 
     public Set<Module> searchSettingTitles(String text) {
@@ -323,7 +339,7 @@ public class Modules extends System<Modules> {
     public void disableAll() {
         synchronized (active) {
             for (Module module : getAll()) {
-                if (module.isActive()) module.toggle();
+                module.disable();
             }
         }
     }

@@ -26,20 +26,29 @@ import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
+import net.minecraft.block.ShapeContext;
 import net.minecraft.client.option.Perspective;
+import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.network.packet.s2c.play.DeathMessageS2CPacket;
 import net.minecraft.network.packet.s2c.play.HealthUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlayerRespawnS2CPacket;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
 public class Freecam extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgPathing = settings.createGroup("Pathing");
 
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
@@ -147,8 +156,8 @@ public class Freecam extends Module {
         perspective = mc.options.getPerspective();
         speedValue = speed.get();
 
-        Utils.set(pos, mc.gameRenderer.getCamera().getPos());
-        Utils.set(prevPos, mc.gameRenderer.getCamera().getPos());
+        Utils.set(pos, mc.gameRenderer.getCamera().getCameraPos());
+        Utils.set(prevPos, mc.gameRenderer.getCamera().getCameraPos());
 
         if (mc.options.getPerspective() == Perspective.THIRD_PERSON_FRONT) {
             yaw += 180;
@@ -284,6 +293,41 @@ public class Freecam extends Module {
         if (onInput(event.key(), event.action)) event.cancel();
     }
 
+    @Nullable
+    private BlockPos rayCastEntity(Vec3d posVec, Vec3d max, short maxDist) {
+        EntityHitResult res = ProjectileUtil.raycast(
+            mc.player,
+            posVec,
+            max,
+            Box.enclosing(BlockPos.ofFloored(posVec.x, posVec.y, posVec.z), BlockPos.ofFloored(max.x, max.y, max.z)),
+            (entity) -> true,
+            maxDist
+        );
+
+        if (res == null) return null;
+
+        Vec3d vec = res.getPos();
+
+        return BlockPos.ofFloored(vec.x, vec.y, vec.z);
+    }
+
+    @Nullable
+    private BlockPos rayCastBlock(Vec3d posVec, Vec3d max) {
+        RaycastContext ctx = new RaycastContext(
+            posVec,
+            max,
+            RaycastContext.ShapeType.VISUAL,
+            RaycastContext.FluidHandling.SOURCE_ONLY,
+            ShapeContext.absent()
+        );
+
+        BlockHitResult res = mc.world.raycast(ctx);
+        if (res.getType() == HitResult.Type.MISS) return null;
+
+        // Don't move inside block
+        return res.getBlockPos().add(res.getSide().getVector());
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     private void onMouseClick(MouseClickEvent event) {
         if (onInput(event.button(), event.action)) event.cancel();
@@ -356,6 +400,12 @@ public class Freecam extends Module {
             if (mc.player.getHealth() - packet.getHealth() > 0 && toggleOnDamage.get()) {
                 toggle();
                 info("Toggled off because you took damage.");
+            }
+        }
+        else if (event.packet instanceof PlayerRespawnS2CPacket) {
+            if (isActive()) {
+                toggle();
+                info("Toggled off because you changed dimensions.");
             }
         }
     }

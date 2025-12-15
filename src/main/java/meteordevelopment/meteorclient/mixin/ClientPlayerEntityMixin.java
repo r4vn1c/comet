@@ -6,18 +6,25 @@
 package meteordevelopment.meteorclient.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.authlib.GameProfile;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.entity.DropItemsEvent;
 import meteordevelopment.meteorclient.events.entity.player.PlayerTickMovementEvent;
 import meteordevelopment.meteorclient.events.entity.player.SendMovementPacketsEvent;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.player.NoMiningTrace;
 import meteordevelopment.meteorclient.systems.modules.player.Portals;
+import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,7 +46,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         if (MeteorClient.EVENT_BUS.post(DropItemsEvent.get(getMainHandStack())).isCancelled()) info.setReturnValue(false);
     }
 
-    @ModifyExpressionValue(method = "tickNausea", at = @At(value = "FIELD", target = "Lnet/minecraft/client/MinecraftClient;currentScreen:Lnet/minecraft/client/gui/screen/Screen;"))
+    @ModifyExpressionValue(method = "tickNausea", at = @At(value = "FIELD", target = "Lnet/minecraft/client/MinecraftClient;currentScreen:Lnet/minecraft/client/gui/screen/Screen;", opcode = Opcodes.GETFIELD))
     private Screen modifyNauseaCurrentScreen(Screen original) {
         if (Modules.get().isActive(Portals.class)) return null;
         return original;
@@ -48,6 +55,20 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
     @Inject(method = "tickMovement", at = @At("HEAD"))
     private void preTickMovement(CallbackInfo ci) {
         MeteorClient.EVENT_BUS.post(PlayerTickMovementEvent.get());
+    }
+
+    @ModifyReturnValue(method = "getCrosshairTarget(FLnet/minecraft/entity/Entity;)Lnet/minecraft/util/hit/HitResult;", at = @At("RETURN"))
+    private static HitResult onUpdateTargetedEntity(HitResult original, @Local HitResult hitResult) {
+        if (original instanceof EntityHitResult ehr) {
+            if (Modules.get().get(NoMiningTrace.class).canWork(ehr.getEntity()) && hitResult.getType() == HitResult.Type.BLOCK) {
+                return hitResult;
+            }
+            else if (ehr.getEntity() instanceof FakePlayerEntity fakePlayer && fakePlayer.noHit) {
+                return hitResult;
+            }
+        }
+
+        return original;
     }
 
     // Rotations

@@ -7,7 +7,7 @@ package meteordevelopment.meteorclient.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import meteordevelopment.meteorclient.MeteorClient;
-import meteordevelopment.meteorclient.events.entity.LivingEntityMoveEvent;
+import meteordevelopment.meteorclient.events.entity.EntityMoveEvent;
 import meteordevelopment.meteorclient.events.entity.player.JumpVelocityMultiplierEvent;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.systems.modules.Modules;
@@ -16,11 +16,7 @@ import meteordevelopment.meteorclient.systems.modules.render.Freecam;
 import meteordevelopment.meteorclient.systems.modules.render.NoRender;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Vec3d;
@@ -61,8 +57,8 @@ public abstract class EntityMixin {
         if ((Object) this == mc.player) {
             MeteorClient.EVENT_BUS.post(PlayerMoveEvent.get(type, movement));
         }
-        else if ((Object) this instanceof LivingEntity) {
-            MeteorClient.EVENT_BUS.post(LivingEntityMoveEvent.get((LivingEntity) (Object) this, movement));
+        else {
+            MeteorClient.EVENT_BUS.post(EntityMoveEvent.get((Entity) (Object) this, movement));
         }
     }
 

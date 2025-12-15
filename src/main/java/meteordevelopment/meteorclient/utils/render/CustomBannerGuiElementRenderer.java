@@ -7,7 +7,6 @@ package meteordevelopment.meteorclient.utils.render;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.render.SpecialGuiElementRenderer;
-import net.minecraft.client.gui.render.state.special.BannerResultGuiElementRenderState;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;

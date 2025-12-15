@@ -5,6 +5,7 @@
 
 package meteordevelopment.meteorclient.mixin;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -17,7 +18,7 @@ import meteordevelopment.meteorclient.systems.proxies.Proxies;
 import meteordevelopment.meteorclient.systems.proxies.Proxy;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
-import net.minecraft.network.handler.PacketEncoderException;
+import net.minecraft.network.NetworkingBackend;
 import net.minecraft.network.handler.PacketSizeLogger;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
@@ -44,8 +45,8 @@ public abstract class ClientConnectionMixin {
         } else if (MeteorClient.EVENT_BUS.post(new PacketEvent.Receive(packet, (ClientConnection) (Object) this)).isCancelled()) ci.cancel();
     }
 
-    @Inject(method = "connect(Ljava/net/InetSocketAddress;ZLnet/minecraft/network/ClientConnection;)Lio/netty/channel/ChannelFuture;", at = @At("HEAD"))
-    private static void onConnect(InetSocketAddress address, boolean useEpoll, ClientConnection connection, CallbackInfoReturnable<?> cir) {
+    @Inject(method = "connect(Ljava/net/InetSocketAddress;Lnet/minecraft/network/NetworkingBackend;Lnet/minecraft/network/ClientConnection;)Lio/netty/channel/ChannelFuture;", at = @At("HEAD"))
+    private static void onConnect(InetSocketAddress address, NetworkingBackend backend, ClientConnection connection, CallbackInfoReturnable<ChannelFuture> cir) {
         MeteorClient.EVENT_BUS.post(ServerConnectEndEvent.get(address));
     }
 

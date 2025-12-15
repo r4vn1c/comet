@@ -25,7 +25,7 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.client.resource.language.I18n;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -110,7 +110,7 @@ public class DefaultSettingsWidgetFactory extends SettingsWidgetFactory {
         RemoveInfo removeInfo = null;
 
         for (Setting<?> setting : group) {
-            if (!StringUtils.containsIgnoreCase(setting.title, filter)) continue;
+            if (!Strings.CI.contains(setting.title, filter)) continue;
 
             boolean visible = setting.isVisible();
             setting.lastWasVisible = visible;
@@ -450,9 +450,15 @@ public class DefaultSettingsWidgetFactory extends SettingsWidgetFactory {
 
         WDoubleEdit component = table.add(theme.doubleEdit(value, setting.min, setting.max, setting.sliderMin, setting.sliderMax, setting.decimalPlaces, setting.noSlider)).expandX().widget();
         if (setting.onSliderRelease) {
-            component.actionOnRelease = () -> update.accept(component.get());
+            component.actionOnRelease = () -> {
+                update.accept(component.get());
+                setting.onChanged();
+            };
         } else {
-            component.action = () -> update.accept(component.get());
+            component.action = () -> {
+                update.accept(component.get());
+                setting.onChanged();
+            };
         }
 
         table.row();

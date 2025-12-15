@@ -8,6 +8,7 @@ package meteordevelopment.meteorclient.mixin;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.events.entity.player.DoItemUseEvent;
 import meteordevelopment.meteorclient.events.entity.player.ItemUseCrosshairTargetEvent;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
@@ -30,7 +31,6 @@ import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.resource.ReloadableResourceManagerImpl;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.profiler.Profilers;
 import org.jetbrains.annotations.Nullable;
@@ -69,10 +69,6 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
     @Shadow
     @Nullable
     public ClientPlayerEntity player;
-
-    @Shadow
-    @Final
-    private ReloadableResourceManagerImpl resourceManager;
 
     @Shadow
     @Final
@@ -116,8 +112,8 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
         doItemUseCalled = true;
     }
 
-    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;Z)V", at = @At("HEAD"))
-    private void onDisconnect(Screen screen, boolean transferring, CallbackInfo info) {
+    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;ZZ)V", at = @At("HEAD"))
+    private void onDisconnect(Screen screen, boolean transferring, boolean stopSound, CallbackInfo info) {
         if (world != null) {
             MeteorClient.EVENT_BUS.post(GameLeftEvent.get());
         }
@@ -131,6 +127,11 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
         MeteorClient.EVENT_BUS.post(event);
 
         if (event.isCancelled()) info.cancel();
+    }
+
+    @Inject(method = "doItemUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Hand;values()[Lnet/minecraft/util/Hand;"), cancellable = true)
+    private void onDoItemUseBeforeHands(CallbackInfo ci) {
+        if (MeteorClient.EVENT_BUS.post(DoItemUseEvent.get()).isCancelled()) ci.cancel();
     }
 
     @ModifyExpressionValue(method = "doItemUse", at = @At(value = "FIELD", target = "Lnet/minecraft/client/MinecraftClient;crosshairTarget:Lnet/minecraft/util/hit/HitResult;", ordinal = 1))

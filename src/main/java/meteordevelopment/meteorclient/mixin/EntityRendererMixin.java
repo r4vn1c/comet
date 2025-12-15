@@ -5,7 +5,6 @@
 
 package meteordevelopment.meteorclient.mixin;
 
-import com.google.common.collect.ImmutableList;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import meteordevelopment.meteorclient.systems.modules.Modules;
@@ -13,11 +12,9 @@ import meteordevelopment.meteorclient.systems.modules.render.Fullbright;
 import meteordevelopment.meteorclient.systems.modules.render.Nametags;
 import meteordevelopment.meteorclient.systems.modules.render.NoRender;
 import meteordevelopment.meteorclient.utils.entity.EntityUtils;
-import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.render.entity.state.EntityHitbox;
-import net.minecraft.client.render.entity.state.EntityHitboxAndView;
+import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.client.render.entity.state.LivingEntityRenderState;
 import net.minecraft.entity.Entity;
@@ -35,9 +32,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin<T extends Entity, S extends EntityRenderState> {
+
+    @Unique private NoRender noRender;
+
+    // meteor is already initialised at this point
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void onInit(EntityRendererFactory.Context context, CallbackInfo ci) {
+        noRender = Modules.get().get(NoRender.class);
+    }
+
     @Inject(method = "getDisplayName", at = @At("HEAD"), cancellable = true)
     private void onRenderLabel(T entity, CallbackInfoReturnable<Text> cir) {
-        if (Modules.get().get(NoRender.class).noNametags()) cir.setReturnValue(null);
+        if (noRender.noNametags()) cir.setReturnValue(null);
         if (!(entity instanceof PlayerEntity player)) return;
         if (Modules.get().get(Nametags.class).playerNametags() && !(EntityUtils.getGameMode(player) == null && Modules.get().get(Nametags.class).excludeBots()))
             cir.setReturnValue(null);
@@ -45,8 +51,8 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
 
     @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
     private void shouldRender(T entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
-        if (Modules.get().get(NoRender.class).noEntity(entity)) cir.setReturnValue(false);
-        if (Modules.get().get(NoRender.class).noFallingBlocks() && entity instanceof FallingBlockEntity) cir.setReturnValue(false);
+        if (noRender.noEntity(entity)) cir.setReturnValue(false);
+        if (noRender.noFallingBlocks() && entity instanceof FallingBlockEntity) cir.setReturnValue(false);
     }
 
     @ModifyReturnValue(method = "getSkyLight", at = @At("RETURN"))
@@ -66,7 +72,7 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
 
     @Inject(method = "updateShadow(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/render/entity/state/EntityRenderState;)V", at = @At("HEAD"), cancellable = true)
     private void updateShadow(Entity entity, EntityRenderState renderState, CallbackInfo ci) {
-        if (Modules.get().get(NoRender.class).noDeadEntities() &&
+        if (noRender.noDeadEntities() &&
             entity instanceof LivingEntity &&
             renderState instanceof LivingEntityRenderState livingEntityRenderState &&
             livingEntityRenderState.deathTime > 0) {
