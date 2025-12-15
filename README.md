@@ -64,6 +64,7 @@ Modules marked with an asterisk (`*`) require OP or Singleplayer to use.
 #### Misc
 - Ambience: Customize stuff like how the sky renders. Allows for cursed things like End sky in the Overworld. Purely cosmetic.
 - Auto Reconnect: Automatically reconnects a user if they somehow lost connection to a server. Useful for AFK sessions on servers that restart at a set time.
+- Auto Sign: Automatically writes signs, using the text of the first placed sign. Useful for mob farms, where many signs have to be placed.
 - Better Chat: Improvements to chat, like prefixes, suffixes and filter regexes.
 - Discord Presence: Customizable Discord Rich Presence for fun.
 - Inventory Tweaks: Inventory improvements like auto transfer, chest sorting, and shift + drag to move items.

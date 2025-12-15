@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes to Meteor are not documented here, only Asteroid specific changes.
 
+## [0.3.4] - 2025-12-15
+Rebased to Meteor Client 1.21.11, Build #4
+
+### Added
+#### New Modules
+- `Auto Sign`: Automatically writes signs, using the text of the first placed sign. Useful for mob farms, where many signs have to be placed.
+
+### Changed
+- Minecraft is now at 1.21.11
+
 ## [0.3.3] - 2025-10-21
 Rebased to Meteor Client 1.21.10, Build #7
 
