@@ -425,6 +425,7 @@ public class Modules extends System<Modules> {
         add(new NoMiningTrace());
         add(new Portals());
         add(new Rotation());
+        add(new PotionSaver());
     }
 
     private void initRender() {
@@ -465,6 +466,11 @@ public class Modules extends System<Modules> {
         add(new InventoryTweaks());
         add(new Ambience());
         add(new AutoSign());
+        add(new AutoBreed());
+        add(new AutoTotem());
+        add(new AttributeSwap());
+        add(new AutoBrewer());
+        add(new AutoShearer());
     }
 
     private void blacklist() {
